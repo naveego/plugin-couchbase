@@ -1,0 +1,60 @@
+{
+  "id": "plugin-couchbase",
+  "displayName": "Couchbase",
+  "description": "Publisher which delivers Golden Records into a Couchbase bucket",
+  "apiVersion": "2",
+  "versionDescription": "Version 2",
+  "version": "1.0.0",
+  "iconFile": "icon.jpg",
+  "executable": "PluginCouchbase",
+  "kind": "publisher",
+  "os": "$GOOS",
+  "arch": "$GOARCH",
+  "canProduceMultipleSchemas": true,
+  "canAcceptQueryBasedSchemas": false,
+  "canUseOAuth": false,
+  "canWrite": false,
+  "canConfigureReplication": true,
+  "canWriteReplication": true,
+  "configSchema": {
+    "ui": {
+      "ui:order": [
+        "Servers",
+        "Username",
+        "Password"
+      ],
+      "Password": {
+        "ui:widget": "password"
+      }
+    },
+    "schema": {
+      "type": "object",
+      "properties": {
+        "Servers" : {
+          "type": "array",
+          "title": "Servers",
+          "description": "The hostnames of the Couchbase servers",
+          "minItems": 1,
+          "items": {
+            "type": "string"
+          }
+        },
+        "Username": {
+          "type": "string",
+          "title": "Username",
+          "description": "The username to use for authentication"
+        },
+        "Password": {
+          "type": "string",
+          "title": "Password",
+          "description": "The password to use for authentication"
+        }
+      },
+      "required": [
+        "Servers",
+        "Username",
+        "Password"
+      ]
+    }
+  }
+}

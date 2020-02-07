@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ContentModelStore">
+    <e p="$APPLICATION_CONFIG_DIR$/consoles/db" t="IncludeRecursive" />
+    <e p="$APPLICATION_CONFIG_DIR$/extensions" t="IncludeRecursive" />
+    <e p="$USER_HOME$/.Rider2019.3/system/extResources" t="IncludeRecursive" />
+    <e p="$USER_HOME$/.Rider2019.3/system/resharper-host/local/Transient/ReSharperHost/v193/SolutionCaches/_PluginCouchbase.-16702849.00" t="ExcludeRecursive" />
+    <e p="$USER_HOME$/.nuget/packages/microsoft.net.test.sdk/16.0.1/build/netcoreapp1.0" t="Include">
+      <e p="Microsoft.NET.Test.Sdk.Program.cs" t="Include" />
+    </e>
+    <e p="$USER_HOME$/.nuget/packages/xunit.runner.visualstudio/2.4.0/build/netcoreapp1.0/xunit.runner.reporters.netcoreapp10.dll" t="Include" />
+    <e p="$USER_HOME$/.nuget/packages/xunit.runner.visualstudio/2.4.0/build/netcoreapp1.0/xunit.runner.utility.netcoreapp10.dll" t="Include" />
+    <e p="$USER_HOME$/.nuget/packages/xunit.runner.visualstudio/2.4.0/build/netcoreapp1.0/xunit.runner.visualstudio.dotnetcore.testadapter.dll" t="Include" />
+    <e p="$PROJECT_DIR$" t="IncludeFlat">
+      <e p="PluginCouchbase" t="IncludeRecursive">
+        <e p="API" t="Include">
+          <e p="Discover" t="Include" />
+          <e p="Factory" t="Include">
+            <e p="ClusterFactory.cs" t="Include" />
+            <e p="IClusterFactory.cs" t="Include" />
+          </e>
+          <e p="Read" t="Include" />
+          <e p="Replication" t="Include">
+            <e p="GetPreviousReplicationMetadata.cs" t="Include" />
+            <e p="GetSchemaJson.cs" t="Include" />
+            <e p="GetUIJson.cs" t="Include" />
+            <e p="ReconcileReplicationJob.cs" t="Include" />
+            <e p="UpsertReplicationMetadata.cs" t="Include" />
+            <e p="ValidateReplicationFormData.cs" t="Include" />
+            <e p="WriteRecord.cs" t="Include" />
+          </e>
+          <e p="Utility" t="Include">
+            <e p="Constants.cs" t="Include" />
+          </e>
+          <e p="Write" t="Include" />
+        </e>
+        <e p="DataContracts" t="Include">
+          <e p="ConfigureReplicationFormData.cs" t="Include" />
+          <e p="ReplicationMetadata.cs" t="Include" />
+        </e>
+        <e p="Helper" t="Include">
+          <e p="Logger.cs" t="Include" />
+          <e p="ServerStatus.cs" t="Include" />
+          <e p="Settings.cs" t="Include" />
+          <e p="WriteSettings.cs" t="Include" />
+        </e>
+        <e p="Plugin" t="Include">
+          <e p="Plugin.cs" t="Include" />
+        </e>
+        <e p="PluginCouchbase.csproj" t="IncludeRecursive" />
+        <e p="Program.cs" t="Include" />
+        <e p="Publisher" t="Include">
+          <e p="Publisher.cs" t="Include" />
+          <e p="PublisherGrpc.cs" t="Include" />
+        </e>
+        <e p="bin" t="ExcludeRecursive" />
+        <e p="obj" t="ExcludeRecursive">
+          <e p="Debug" t="Include">
+            <e p="netcoreapp2.2" t="Include">
+              <e p="PluginCouchbase.AssemblyInfo.cs" t="Include" />
+            </e>
+          </e>
+        </e>
+      </e>
+      <e p="PluginCouchbase.sln" t="IncludeFlat" />
+      <e p="PluginCouchbaseTest" t="IncludeRecursive">
+        <e p="PluginCouchbaseTest.csproj" t="IncludeRecursive" />
+        <e p="UnitTest1.cs" t="Include" />
+        <e p="bin" t="ExcludeRecursive" />
+        <e p="obj" t="ExcludeRecursive">
+          <e p="Debug" t="Include">
+            <e p="netcoreapp2.2" t="Include">
+              <e p="PluginCouchbaseTest.AssemblyInfo.cs" t="Include" />
+            </e>
+          </e>
+        </e>
+      </e>
+      <e p="packages" t="ExcludeRecursive" />
+    </e>
+  </component>
+</project>
