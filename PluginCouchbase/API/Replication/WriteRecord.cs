@@ -1,9 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Couchbase;
+using Grpc.Core;
 using Newtonsoft.Json;
 using PluginCouchbase.API.Factory;
 using PluginCouchbase.API.Utility;
@@ -15,6 +18,8 @@ namespace PluginCouchbase.API.Replication
 {
     public static partial class Replication
     {
+        private static readonly SemaphoreSlim ReplicationSemaphoreSlim = new SemaphoreSlim(1);
+        
         /// <summary>
         /// Adds and removes records to local replication db
         /// Adds and updates available shapes
@@ -23,14 +28,22 @@ namespace PluginCouchbase.API.Replication
         /// <param name="schema"></param>
         /// <param name="record"></param>
         /// <param name="config"></param>
+        /// <param name="responseStream"></param>
         /// <returns>Error message string</returns>
         public static async Task<string> WriteRecord(IClusterFactory clusterFactory, Schema schema, Record record,
-            ConfigureReplicationFormData config)
+            ConfigureReplicationFormData config, IServerStreamWriter<RecordAck> responseStream)
         {
+            // debug
+            Logger.Debug($"Starting timer for {record.RecordId}");
+            var timer = Stopwatch.StartNew();
+
             try
             {
                 // debug
                 Logger.Debug(JsonConvert.SerializeObject(record, Formatting.Indented));
+                
+                // semaphore
+                await ReplicationSemaphoreSlim.WaitAsync();
 
                 // setup
                 var safeShapeName = schema.Name;
@@ -113,12 +126,37 @@ namespace PluginCouchbase.API.Replication
                     }
                 }
 
+                var ack = new RecordAck
+                {
+                    CorrelationId = record.CorrelationId,
+                    Error = ""
+                };
+                await responseStream.WriteAsync(ack);
+
+                timer.Stop();
+                Logger.Debug($"Acknowledged Record {record.RecordId} time: {timer.ElapsedMilliseconds}");
+
                 return "";
             }
             catch (Exception e)
             {
                 Logger.Error($"Error replicating records {e.Message}");
-                throw;
+                // send ack
+                var ack = new RecordAck
+                {
+                    CorrelationId = record.CorrelationId,
+                    Error = e.Message
+                };
+                await responseStream.WriteAsync(ack);
+
+                timer.Stop();
+                Logger.Debug($"Failed Record {record.RecordId} time: {timer.ElapsedMilliseconds}");
+
+                return e.Message;
+            }
+            finally
+            {
+                ReplicationSemaphoreSlim.Release();
             }
         }
 
@@ -136,40 +174,12 @@ namespace PluginCouchbase.API.Replication
             foreach (var property in schema.Properties)
             {
                 var key = property.Id;
-                if (recordData.ContainsKey(key))
+                if (!recordData.ContainsKey(key))
                 {
-                    var rawValue = recordData[key];
-                    if (rawValue == null)
-                    {
-                        switch (property.Type)
-                        {
-                            case PropertyType.Bool:
-                                rawValue = false;
-                                break;
-                            case PropertyType.Float:
-                            case PropertyType.Integer:
-                                rawValue = 0;
-                                break;
-                            case PropertyType.Decimal:
-                                rawValue = "0";
-                                break;
-                            case PropertyType.Text:
-                            case PropertyType.String:
-                            case PropertyType.Json:
-                                rawValue = "";
-                                break;
-                            case PropertyType.Date:
-                            case PropertyType.Datetime:
-                                rawValue = DateTime.Now.ToString(CultureInfo.InvariantCulture);
-                                break;
-                            default:
-                                rawValue = "";
-                                break;
-                        }
-                    }
-
-                    namedData.Add(property.Name, rawValue);
+                    continue;
                 }
+
+                namedData.Add(property.Name, recordData[key]);
             }
 
             return namedData;

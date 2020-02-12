@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -291,34 +292,39 @@ namespace PluginCouchbase.Plugin
 
                     if (_server.WriteSettings.IsReplication())
                     {
+                        
                         // send record to source system
                         // timeout if it takes longer than the sla
-                        var task = Task.Run(async () => await Replication.WriteRecord(_clusterFactory, schema, record, config));
-                        if (task.Wait(TimeSpan.FromSeconds(sla)))
-                        {
-                            // send ack
-                            var ack = new RecordAck
-                            {
-                                CorrelationId = record.CorrelationId,
-                                Error = task.Result
-                            };
-                            await responseStream.WriteAsync(ack);
-
-                            if (String.IsNullOrEmpty(task.Result))
-                            {
-                                outCount++;
-                            }
-                        }
-                        else
-                        {
-                            // send timeout ack
-                            var ack = new RecordAck
-                            {
-                                CorrelationId = record.CorrelationId,
-                                Error = "timed out"
-                            };
-                            await responseStream.WriteAsync(ack);
-                        }
+                        var task = Task.Run(async () => await Replication.WriteRecord(_clusterFactory, schema, record, config, responseStream), context.CancellationToken);
+                        // if (task.Wait(TimeSpan.FromSeconds(sla)))
+                        // {
+                        //     // send ack
+                        //     var ack = new RecordAck
+                        //     {
+                        //         CorrelationId = record.CorrelationId,
+                        //         Error = task.Result
+                        //     };
+                        //     await responseStream.WriteAsync(ack);
+                        //
+                        //     if (String.IsNullOrEmpty(task.Result))
+                        //     {
+                        //         outCount++;
+                        //     }
+                        //     
+                        //     Logger.Info($"Record {record.RecordId} before timeout");
+                        // }
+                        // else
+                        // {
+                        //     // send timeout ack
+                        //     var ack = new RecordAck
+                        //     {
+                        //         CorrelationId = record.CorrelationId,
+                        //         Error = "timed out"
+                        //     };
+                        //     await responseStream.WriteAsync(ack);
+                        //     
+                        //     Logger.Info($"Record {record.RecordId} after timeout");
+                        // }
                     }
                     else
                     {
@@ -326,7 +332,7 @@ namespace PluginCouchbase.Plugin
                     }
                 }
 
-                Logger.Info($"Wrote {outCount} of {inCount} records to Couchbase.");
+                Logger.Info($"Wrote {inCount} records to Couchbase.");
             }
             catch (Exception e)
             {
