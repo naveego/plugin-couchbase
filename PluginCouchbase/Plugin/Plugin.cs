@@ -274,9 +274,7 @@ namespace PluginCouchbase.Plugin
                 Logger.Info("Writing records to Couchbase...");
 
                 var schema = _server.WriteSettings.Schema;
-                var sla = _server.WriteSettings.CommitSLA;
                 var inCount = 0;
-                var outCount = 0;
                 var config =
                     JsonConvert.DeserializeObject<ConfigureReplicationFormData>(_server.WriteSettings.Replication
                         .SettingsJson);
@@ -295,36 +293,7 @@ namespace PluginCouchbase.Plugin
                         
                         // send record to source system
                         // timeout if it takes longer than the sla
-                        var task = Task.Run(async () => await Replication.WriteRecord(_clusterFactory, schema, record, config, responseStream), context.CancellationToken);
-                        // if (task.Wait(TimeSpan.FromSeconds(sla)))
-                        // {
-                        //     // send ack
-                        //     var ack = new RecordAck
-                        //     {
-                        //         CorrelationId = record.CorrelationId,
-                        //         Error = task.Result
-                        //     };
-                        //     await responseStream.WriteAsync(ack);
-                        //
-                        //     if (String.IsNullOrEmpty(task.Result))
-                        //     {
-                        //         outCount++;
-                        //     }
-                        //     
-                        //     Logger.Info($"Record {record.RecordId} before timeout");
-                        // }
-                        // else
-                        // {
-                        //     // send timeout ack
-                        //     var ack = new RecordAck
-                        //     {
-                        //         CorrelationId = record.CorrelationId,
-                        //         Error = "timed out"
-                        //     };
-                        //     await responseStream.WriteAsync(ack);
-                        //     
-                        //     Logger.Info($"Record {record.RecordId} after timeout");
-                        // }
+                        Task.Run(async () => await Replication.WriteRecord(_clusterFactory, schema, record, config, responseStream), context.CancellationToken);
                     }
                     else
                     {
