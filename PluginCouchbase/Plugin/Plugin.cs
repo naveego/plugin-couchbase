@@ -153,6 +153,7 @@ namespace PluginCouchbase.Plugin
             // get a schema for each module found
             DiscoverSchemasResponse discoverSchemasResponse = new DiscoverSchemasResponse();
 
+            Logger.Info("Schema discovery not supported");
             return discoverSchemasResponse;
         }
 
@@ -186,7 +187,7 @@ namespace PluginCouchbase.Plugin
             try
             {
                 var errors = new List<string>();
-                if (request.Form.DataJson != "")
+                if (! string.IsNullOrWhiteSpace(request.Form.DataJson))
                 {
                     // check for config errors
                     var replicationFormData = JsonConvert.DeserializeObject<ConfigureReplicationFormData>(request.Form.DataJson);
@@ -234,7 +235,7 @@ namespace PluginCouchbase.Plugin
             Logger.Info("Preparing write...");
             _server.WriteConfigured = false;
 
-            var writeSettings = new WriteSettings
+            _server.WriteSettings = new WriteSettings
             {
                 CommitSLA = request.CommitSlaSeconds,
                 Schema = request.Schema,
@@ -245,12 +246,14 @@ namespace PluginCouchbase.Plugin
             if (_server.WriteSettings.IsReplication())
             {
                 // reconcile job
+                Logger.Info($"Starting to reconcile Replication Job {request.DataVersions.JobId}");
                 await Replication.ReconcileReplicationJob(_clusterFactory, request);
+                Logger.Info($"Finished reconciling Replication Job {request.DataVersions.JobId}");
             }
-
-            _server.WriteSettings = writeSettings;
+            
             _server.WriteConfigured = true;
 
+            Logger.Debug(JsonConvert.SerializeObject(_server.WriteSettings, Formatting.Indented));
             Logger.Info("Write prepared.");
             return new PrepareWriteResponse();
         }

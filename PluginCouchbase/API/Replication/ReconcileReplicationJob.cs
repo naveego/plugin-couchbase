@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Newtonsoft.Json;
 using PluginCouchbase.API.Factory;
 using PluginCouchbase.DataContracts;
+using PluginCouchbase.Helper;
 using Pub;
 
 namespace PluginCouchbase.API.Replication
@@ -25,10 +26,16 @@ namespace PluginCouchbase.API.Replication
             var safeVersionBucketName =
                 string.Concat(replicationSettings.VersionBucketName.Where(c => !char.IsWhiteSpace(c)));
 
+            Logger.Info(
+                $"Golden Bucket: {safeGoldenBucketName} Version Bucket: {safeVersionBucketName} job: {request.DataVersions.JobId}");
+
             // get previous metadata
+            Logger.Info($"Getting previous metadata job: {request.DataVersions.JobId}");
             var previousMetadata = await GetPreviousReplicationMetadata(clusterFactory, request.DataVersions.JobId);
+            Logger.Info($"Got previous metadata job: {request.DataVersions.JobId}");
 
             // create current metadata
+            Logger.Info($"Generating current metadata job: {request.DataVersions.JobId}");
             var metadata = new ReplicationMetadata
             {
                 ReplicatedShapeId = request.Schema.Id,
@@ -36,15 +43,15 @@ namespace PluginCouchbase.API.Replication
                 Timestamp = DateTime.Now,
                 Request = request
             };
-
-            // setup for reconciliation
-            var cluster = clusterFactory.GetCluster();
+            Logger.Info($"Generated current metadata job: {request.DataVersions.JobId}");
 
             // check if changes are needed
             if (previousMetadata == null)
             {
-                var goldenBucket = await cluster.OpenBucketAsync(safeGoldenBucketName);
-                var versionBucket = await cluster.OpenBucketAsync(safeVersionBucketName);
+                Logger.Info($"No Previous metadata creating buckets job: {request.DataVersions.JobId}");
+                await clusterFactory.EnsureBucketAsync(safeGoldenBucketName);
+                await clusterFactory.EnsureBucketAsync(safeVersionBucketName);
+                Logger.Info($"Created buckets job: {request.DataVersions.JobId}");
             }
             else
             {
@@ -81,31 +88,33 @@ namespace PluginCouchbase.API.Replication
                     dropVersionReason = ShapeDataVersionChange;
                 }
 
+                // drop previous golden bucket
                 if (dropGoldenReason != "")
                 {
                     var safePreviousGoldenBucketName =
                         string.Concat(previousReplicationSettings.GoldenBucketName.Where(c => !char.IsWhiteSpace(c)));
-                    var previousGoldenBucket =
-                        await cluster.OpenBucketAsync(safePreviousGoldenBucketName);
-                    cluster.CloseBucket(previousGoldenBucket);
 
-                    var goldenBucket = await cluster.OpenBucketAsync(safeGoldenBucketName);
+                    await clusterFactory.DeleteBucketAsync(safePreviousGoldenBucketName);
+
+                    await clusterFactory.EnsureBucketAsync(safeGoldenBucketName);
                 }
 
+                // drop previous version bucket
                 if (dropVersionReason != "")
                 {
                     var safePreviousVersionBucketName =
                         string.Concat(previousReplicationSettings.VersionBucketName.Where(c => !char.IsWhiteSpace(c)));
-                    var previousVersionBucket =
-                        await cluster.OpenBucketAsync(safePreviousVersionBucketName);
-                    cluster.CloseBucket(previousVersionBucket);
 
-                    var versionBucket = await cluster.OpenBucketAsync(safeVersionBucketName);
+                    await clusterFactory.DeleteBucketAsync(safePreviousVersionBucketName);
+
+                    await clusterFactory.EnsureBucketAsync(safeVersionBucketName);
                 }
             }
 
             // save new metadata
-            metadata = await UpsertReplicationMetadata(clusterFactory, request.DataVersions.JobId, metadata);
+            Logger.Info($"Updating metadata job: {request.DataVersions.JobId}");
+            await UpsertReplicationMetadata(clusterFactory, request.DataVersions.JobId, metadata);
+            Logger.Info($"Updated metadata job: {request.DataVersions.JobId}");
         }
     }
 }

@@ -37,6 +37,7 @@
         </e>
         <e p="DataContracts" t="Include">
           <e p="ConfigureReplicationFormData.cs" t="Include" />
+          <e p="EnsureBucketResponse.cs" t="Include" />
           <e p="ReplicationMetadata.cs" t="Include" />
         </e>
         <e p="Helper" t="Include">
@@ -65,8 +66,11 @@
       </e>
       <e p="PluginCouchbase.sln" t="IncludeFlat" />
       <e p="PluginCouchbaseTest" t="IncludeRecursive">
+        <e p="Helper" t="Include" />
+        <e p="Plugin" t="Include">
+          <e p="PluginTest.cs" t="Include" />
+        </e>
         <e p="PluginCouchbaseTest.csproj" t="IncludeRecursive" />
-        <e p="UnitTest1.cs" t="Include" />
         <e p="bin" t="ExcludeRecursive" />
         <e p="obj" t="ExcludeRecursive">
           <e p="Debug" t="Include">

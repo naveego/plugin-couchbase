@@ -10,11 +10,11 @@ namespace PluginCouchbase.API.Replication
     {
         public static async Task<ReplicationMetadata> UpsertReplicationMetadata(IClusterFactory clusterFactory, string jobId, ReplicationMetadata metadata)
         {
-            var cluster = clusterFactory.GetCluster();
-            var bucket = await cluster.OpenBucketAsync(Constants.ReplicationMetadataBucket);
+            var bucket = await clusterFactory.GetBucketAsync(Constants.ReplicationMetadataBucket);
 
             var result = await bucket.UpsertAsync(jobId, metadata);
             result.EnsureSuccess();
+
             return result.Value;
         }
     }

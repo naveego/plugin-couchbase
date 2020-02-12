@@ -11,5 +11,8 @@ namespace PluginCouchbase.API.Factory
         void Initialize(ClientConfiguration config, PasswordAuthenticator credentials);
         ICluster GetCluster();
         Task<IBucket> GetBucketAsync(string bucketName);
+        Task EnsureBucketAsync(string bucketName);
+        Task DeleteBucketAsync(string bucketName);
+        bool Initialized();
     }
 }

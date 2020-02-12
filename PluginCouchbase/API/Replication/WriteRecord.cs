@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using Couchbase;
@@ -29,6 +29,9 @@ namespace PluginCouchbase.API.Replication
         {
             try
             {
+                // debug
+                Logger.Debug(JsonConvert.SerializeObject(record, Formatting.Indented));
+
                 // setup
                 var safeShapeName = schema.Name;
                 var safeGoldenBucketName =
@@ -36,23 +39,30 @@ namespace PluginCouchbase.API.Replication
                 var safeVersionBucketName =
                     string.Concat(config.VersionBucketName.Where(c => !char.IsWhiteSpace(c)));
 
-                var cluster = clusterFactory.GetCluster();
-                var goldenBucket = await cluster.OpenBucketAsync(safeGoldenBucketName);
-                var versionBucket = await cluster.OpenBucketAsync(safeVersionBucketName);
+                var goldenBucket = await clusterFactory.GetBucketAsync(safeGoldenBucketName);
+                var versionBucket = await clusterFactory.GetBucketAsync(safeVersionBucketName);
 
                 // transform data
                 var recordVersionIds = record.Versions.Select(v => v.RecordId).ToList();
-                var recordData = GetNamedRecordData(schema, record);
+                var recordData = GetNamedRecordData(schema, record.DataJson);
                 recordData[Constants.NaveegoVersionIds] = recordVersionIds;
 
                 // get previous golden record
                 List<string> previousRecordVersionIds;
                 if (await goldenBucket.ExistsAsync(record.RecordId))
                 {
-                    var result = await goldenBucket.LookupIn<Dictionary<string, object>>(record.RecordId)
-                        .Get(Constants.NaveegoVersionIds)
-                        .ExecuteAsync();
-                    previousRecordVersionIds = result.Content<List<string>>(0);
+                    var result = await goldenBucket.GetAsync<Dictionary<string, object>>(record.RecordId);
+
+                    if (result.Value.ContainsKey(Constants.NaveegoVersionIds))
+                    {
+                        previousRecordVersionIds =
+                            JsonConvert.DeserializeObject<List<string>>(
+                                JsonConvert.SerializeObject(result.Value[Constants.NaveegoVersionIds]));
+                    }
+                    else
+                    {
+                        previousRecordVersionIds = recordVersionIds;
+                    }
                 }
                 else
                 {
@@ -63,13 +73,14 @@ namespace PluginCouchbase.API.Replication
                 if (recordData.Count == 0)
                 {
                     // delete everything for this record
-                    Logger.Info($"shapeId: {safeShapeName} | recordId: {record.RecordId} - DELETE");
+                    Logger.Debug($"shapeId: {safeShapeName} | recordId: {record.RecordId} - DELETE");
                     var result = await goldenBucket.RemoveAsync(record.RecordId);
                     result.EnsureSuccess();
 
                     foreach (var versionId in previousRecordVersionIds)
                     {
-                        Logger.Info($"shapeId: {safeShapeName} | recordId: {record.RecordId} | versionId: {versionId} - DELETE");
+                        Logger.Debug(
+                            $"shapeId: {safeShapeName} | recordId: {record.RecordId} | versionId: {versionId} - DELETE");
                         result = await versionBucket.RemoveAsync(versionId);
                         result.EnsureSuccess();
                     }
@@ -77,24 +88,26 @@ namespace PluginCouchbase.API.Replication
                 else
                 {
                     // update record and remove/add versions
-                    Logger.Info($"shapeId: {safeShapeName} | recordId: {record.RecordId} - UPSERT");
+                    Logger.Debug($"shapeId: {safeShapeName} | recordId: {record.RecordId} - UPSERT");
                     var result = await goldenBucket.UpsertAsync(record.RecordId, recordData);
                     result.EnsureSuccess();
-                        
+
                     // delete missing versions
                     var missingVersions = previousRecordVersionIds.Except(recordVersionIds);
                     foreach (var versionId in missingVersions)
                     {
-                        Logger.Info($"shapeId: {safeShapeName} | recordId: {record.RecordId} | versionId: {versionId} - DELETE");
+                        Logger.Debug(
+                            $"shapeId: {safeShapeName} | recordId: {record.RecordId} | versionId: {versionId} - DELETE");
                         var versionDeleteResult = await versionBucket.RemoveAsync(versionId);
                         versionDeleteResult.EnsureSuccess();
                     }
-                        
+
                     // upsert other versions
                     foreach (var version in record.Versions)
                     {
-                        Logger.Info($"shapeId: {safeShapeName} | recordId: {record.RecordId} | versionId: {version.RecordId} - UPSERT");
-                        var versionData = JsonConvert.DeserializeObject<Dictionary<string, object>>(version.DataJson);
+                        Logger.Debug(
+                            $"shapeId: {safeShapeName} | recordId: {record.RecordId} | versionId: {version.RecordId} - UPSERT");
+                        var versionData = GetNamedRecordData(schema, version.DataJson);
                         var versionUpsertResult = await versionBucket.UpsertAsync(version.RecordId, versionData);
                         versionUpsertResult.EnsureSuccess();
                     }
@@ -104,7 +117,7 @@ namespace PluginCouchbase.API.Replication
             }
             catch (Exception e)
             {
-                Logger.Error(e.Message);
+                Logger.Error($"Error replicating records {e.Message}");
                 throw;
             }
         }
@@ -113,24 +126,49 @@ namespace PluginCouchbase.API.Replication
         /// Converts data object with ids to friendly names
         /// </summary>
         /// <param name="schema"></param>
-        /// <param name="record"></param>
+        /// <param name="dataJson"></param>
         /// <returns>Data object with friendly name keys</returns>
-        private static Dictionary<string, object> GetNamedRecordData(Schema schema, Record record)
+        private static Dictionary<string, object> GetNamedRecordData(Schema schema, string dataJson)
         {
             var namedData = new Dictionary<string, object>();
-            var recordData = JsonConvert.DeserializeObject<Dictionary<string, object>>(record.DataJson);
+            var recordData = JsonConvert.DeserializeObject<Dictionary<string, object>>(dataJson);
 
             foreach (var property in schema.Properties)
             {
                 var key = property.Id;
                 if (recordData.ContainsKey(key))
                 {
-                    if (recordData[key] == null)
+                    var rawValue = recordData[key];
+                    if (rawValue == null)
                     {
-                        continue;
+                        switch (property.Type)
+                        {
+                            case PropertyType.Bool:
+                                rawValue = false;
+                                break;
+                            case PropertyType.Float:
+                            case PropertyType.Integer:
+                                rawValue = 0;
+                                break;
+                            case PropertyType.Decimal:
+                                rawValue = "0";
+                                break;
+                            case PropertyType.Text:
+                            case PropertyType.String:
+                            case PropertyType.Json:
+                                rawValue = "";
+                                break;
+                            case PropertyType.Date:
+                            case PropertyType.Datetime:
+                                rawValue = DateTime.Now.ToString(CultureInfo.InvariantCulture);
+                                break;
+                            default:
+                                rawValue = "";
+                                break;
+                        }
                     }
 
-                    namedData.Add(property.Name, recordData[key]);
+                    namedData.Add(property.Name, rawValue);
                 }
             }
 

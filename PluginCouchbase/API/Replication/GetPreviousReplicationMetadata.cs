@@ -11,8 +11,7 @@ namespace PluginCouchbase.API.Replication
         public static async Task<ReplicationMetadata> GetPreviousReplicationMetadata(IClusterFactory clusterFactory,
             string jobId)
         {
-            var cluster = clusterFactory.GetCluster();
-            var bucket = await cluster.OpenBucketAsync(Constants.ReplicationMetadataBucket);
+            var bucket = await clusterFactory.GetBucketAsync(Constants.ReplicationMetadataBucket);
 
             // check if metadata exists
             if (!await bucket.ExistsAsync(jobId))
@@ -24,6 +23,7 @@ namespace PluginCouchbase.API.Replication
             // metadata exists
             var result = await bucket.GetAsync<ReplicationMetadata>(jobId);
             result.EnsureSuccess();
+
             return result.Value;
         }
     }

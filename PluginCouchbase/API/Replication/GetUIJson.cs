@@ -11,7 +11,8 @@ namespace PluginCouchbase.API.Replication
             {
                 {"ui:order", new []
                 {
-                    "BucketName"
+                    "GoldenBucketName",
+                    "VersionBucketName"
                 }}
             };
 
