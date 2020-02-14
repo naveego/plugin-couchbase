@@ -37,7 +37,7 @@ namespace PluginCouchbase.API.Factory
         public async Task<IBucket> GetBucketAsync(string bucketName)
         {
             await EnsureBucketAsync(bucketName);
-
+            await CreateIndex(bucketName);
             return await ClusterHelper.GetBucketAsync(bucketName);
         }
 
@@ -86,7 +86,6 @@ namespace PluginCouchbase.API.Factory
                         Thread.Sleep(1000);
                     }
                 }
-
                 return;
             }
 
@@ -118,6 +117,24 @@ namespace PluginCouchbase.API.Factory
             response.EnsureSuccessStatusCode();
         }
 
+        public async Task CreateIndex(string bucketName)
+        {
+            var bucket = await ClusterHelper.GetBucketAsync(bucketName);
+            var result =
+                await bucket.QueryAsync<dynamic>(
+                    $"CREATE PRIMARY INDEX `{bucketName}-index` ON `{bucketName}` USING GSI;");
+
+            if (!result.Success)
+            {
+                if (result.Errors.First().Message.Contains("already exists"))
+                {
+                    return;    
+                }
+                
+                throw new Exception("Error creating index for bucket");
+            }
+        }
+        
         public bool Initialized()
         {
             return ClusterHelper.Initialized;

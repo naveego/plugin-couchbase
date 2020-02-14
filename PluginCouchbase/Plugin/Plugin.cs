@@ -168,6 +168,7 @@ namespace PluginCouchbase.Plugin
         public override async Task ReadStream(ReadRequest request, IServerStreamWriter<Record> responseStream,
             ServerCallContext context)
         {
+            Logger.SetLogPrefix(request.DataVersions.JobId);
             //Read.GetAllRecords()
         }
 
@@ -233,6 +234,7 @@ namespace PluginCouchbase.Plugin
         /// <returns></returns>
         public override async Task<PrepareWriteResponse> PrepareWrite(PrepareWriteRequest request, ServerCallContext context)
         {
+            Logger.SetLogPrefix(request.DataVersions.JobId);
             Logger.Info("Preparing write...");
             _server.WriteConfigured = false;
 

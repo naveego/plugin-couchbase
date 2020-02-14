@@ -1,8 +1,10 @@
+using System;
 using System.Threading.Tasks;
 using Couchbase;
 using PluginCouchbase.API.Factory;
 using PluginCouchbase.API.Utility;
 using PluginCouchbase.DataContracts;
+using PluginCouchbase.Helper;
 
 namespace PluginCouchbase.API.Replication
 {
@@ -11,20 +13,28 @@ namespace PluginCouchbase.API.Replication
         public static async Task<ReplicationMetadata> GetPreviousReplicationMetadata(IClusterFactory clusterFactory,
             string jobId)
         {
-            var bucket = await clusterFactory.GetBucketAsync(Constants.ReplicationMetadataBucket);
-
-            // check if metadata exists
-            if (!await bucket.ExistsAsync(jobId))
+            try
             {
-                // no metadata
-                return null;
+                var bucket = await clusterFactory.GetBucketAsync(Constants.ReplicationMetadataBucket);
+
+                // check if metadata exists
+                if (!await bucket.ExistsAsync(jobId))
+                {
+                    // no metadata
+                    return null;
+                }
+
+                // metadata exists
+                var result = await bucket.GetAsync<ReplicationMetadata>(jobId);
+                result.EnsureSuccess();
+
+                return result.Value;
             }
-
-            // metadata exists
-            var result = await bucket.GetAsync<ReplicationMetadata>(jobId);
-            result.EnsureSuccess();
-
-            return result.Value;
+            catch (Exception e)
+            {
+                Logger.Error(e.Message);
+                throw;
+            }
         }
     }
 }

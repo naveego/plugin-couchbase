@@ -13,6 +13,7 @@ namespace PluginCouchbase.API.Factory
         Task<IBucket> GetBucketAsync(string bucketName);
         Task EnsureBucketAsync(string bucketName);
         Task DeleteBucketAsync(string bucketName);
+        Task CreateIndex(string bucketName);
         bool Initialized();
     }
 }

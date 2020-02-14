@@ -1,8 +1,10 @@
+using System;
 using System.Threading.Tasks;
 using Couchbase;
 using PluginCouchbase.API.Factory;
 using PluginCouchbase.API.Utility;
 using PluginCouchbase.DataContracts;
+using PluginCouchbase.Helper;
 
 namespace PluginCouchbase.API.Replication
 {
@@ -10,12 +12,20 @@ namespace PluginCouchbase.API.Replication
     {
         public static async Task<ReplicationMetadata> UpsertReplicationMetadata(IClusterFactory clusterFactory, string jobId, ReplicationMetadata metadata)
         {
-            var bucket = await clusterFactory.GetBucketAsync(Constants.ReplicationMetadataBucket);
+            try
+            {
+                var bucket = await clusterFactory.GetBucketAsync(Constants.ReplicationMetadataBucket);
 
-            var result = await bucket.UpsertAsync(jobId, metadata);
-            result.EnsureSuccess();
+                var result = await bucket.UpsertAsync(jobId, metadata);
+                result.EnsureSuccess();
 
-            return result.Value;
+                return result.Value;
+            }
+            catch (Exception e)
+            {
+                Logger.Error(e.Message);
+                throw;
+            }
         }
     }
 }
