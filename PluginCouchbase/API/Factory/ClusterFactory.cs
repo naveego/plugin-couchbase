@@ -59,9 +59,12 @@ namespace PluginCouchbase.API.Factory
             client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
             // create bucket
+            Logger.Info($"Attempting to create bucket {bucketName}");
             var response = await client.PostAsync(requestUrl, body);
             if (response.IsSuccessStatusCode)
             {
+                Logger.Info($"Bucket {bucketName} created successfully");
+                Logger.Info($"Waiting for {bucketName} to be ready");
                 // wait until bucket is ready
                 var retries = 5;
                 while (true)
@@ -86,6 +89,7 @@ namespace PluginCouchbase.API.Factory
                         Thread.Sleep(1000);
                     }
                 }
+                Logger.Info($"Bucket {bucketName} is ready");
                 return;
             }
 
@@ -101,6 +105,7 @@ namespace PluginCouchbase.API.Factory
             }
 
             // error making bucket
+            Logger.Error($"Error ensuring bucket: {JsonConvert.SerializeObject(content.Errors, Formatting.Indented)}");
             throw new Exception($"Error ensuring bucket {bucketName}");
         }
         

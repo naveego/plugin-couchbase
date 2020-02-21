@@ -273,6 +273,8 @@ namespace PluginCouchbase.Plugin
         {
             try
             {
+                //debug
+                // Logger.SetLogLevel(Logger.LogLevel.Debug);
                 Logger.Info("Writing records to Couchbase...");
 
                 var schema = _server.WriteSettings.Schema;
