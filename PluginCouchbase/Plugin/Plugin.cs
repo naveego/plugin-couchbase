@@ -194,7 +194,7 @@ namespace PluginCouchbase.Plugin
                     // check for config errors
                     var replicationFormData = JsonConvert.DeserializeObject<ConfigureReplicationFormData>(request.Form.DataJson);
 
-                    errors = Replication.ValidateReplicationFormData(replicationFormData);
+                    errors = replicationFormData.ValidateReplicationFormData();
                 }
                 
                 return Task.FromResult(new ConfigureReplicationResponse

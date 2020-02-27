@@ -5,7 +5,7 @@ namespace PluginCouchbase.API.Replication
 {
     public static partial class Replication
     {
-        public static List<string> ValidateReplicationFormData(ConfigureReplicationFormData data)
+        public static List<string> ValidateReplicationFormData(this ConfigureReplicationFormData data)
         {
             var errors = new List<string>();
             
