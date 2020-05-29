@@ -8,12 +8,13 @@ using Couchbase.Authentication;
 using Couchbase.Configuration.Client;
 using Google.Protobuf;
 using Grpc.Core;
+using Naveego.Sdk.Plugins;
 using Newtonsoft.Json;
 using PluginCouchbase.API.Factory;
 using PluginCouchbase.API.Replication;
 using PluginCouchbase.DataContracts;
 using PluginCouchbase.Helper;
-using Pub;
+
 
 namespace PluginCouchbase.Plugin
 {
@@ -49,7 +50,7 @@ namespace PluginCouchbase.Plugin
             }
             catch (Exception e)
             {
-                Logger.Error(e.Message);
+                Logger.Error(e, e.Message, context);
                 return new ConnectResponse
                 {
                     OauthStateJson = request.OauthStateJson,
@@ -72,8 +73,14 @@ namespace PluginCouchbase.Plugin
             }
             catch (Exception e)
             {
-                Logger.Error(e.Message);
-                throw;
+                Logger.Error(e, e.Message, context);
+                return new ConnectResponse
+                {
+                    OauthStateJson = request.OauthStateJson,
+                    ConnectionError = "",
+                    OauthError = "",
+                    SettingsError = e.Message
+                };
             }
 
             // test cluster factory
@@ -100,7 +107,7 @@ namespace PluginCouchbase.Plugin
             }
             catch (Exception e)
             {
-                Logger.Error(e.Message);
+                Logger.Error(e, e.Message, context);
 
                 return new ConnectResponse
                 {
@@ -211,7 +218,7 @@ namespace PluginCouchbase.Plugin
             }
             catch (Exception e)
             {
-                Logger.Error(e.Message);
+                Logger.Error(e, e.Message, context);
                 return Task.FromResult(new ConfigureReplicationResponse
                 {
                     Form = new ConfigurationFormResponse
@@ -248,10 +255,18 @@ namespace PluginCouchbase.Plugin
 
             if (_server.WriteSettings.IsReplication())
             {
-                // reconcile job
-                Logger.Info($"Starting to reconcile Replication Job {request.DataVersions.JobId}");
-                await Replication.ReconcileReplicationJob(_clusterFactory, request);
-                Logger.Info($"Finished reconciling Replication Job {request.DataVersions.JobId}");
+                try
+                {
+                    // reconcile job
+                    Logger.Info($"Starting to reconcile Replication Job {request.DataVersions.JobId}");
+                    await Replication.ReconcileReplicationJob(_clusterFactory, request);
+                    Logger.Info($"Finished reconciling Replication Job {request.DataVersions.JobId}");
+                }
+                catch (Exception e)
+                {
+                    Logger.Error(e, e.Message, context);
+                    return new PrepareWriteResponse();
+                }
             }
             
             _server.WriteConfigured = true;
@@ -309,8 +324,7 @@ namespace PluginCouchbase.Plugin
             }
             catch (Exception e)
             {
-                Logger.Error(e.Message);
-                throw;
+                Logger.Error(e, e.Message, context);
             }
         }
 

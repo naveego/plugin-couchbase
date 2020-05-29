@@ -7,12 +7,13 @@ using System.Threading;
 using System.Threading.Tasks;
 using Couchbase;
 using Grpc.Core;
+using Naveego.Sdk.Plugins;
 using Newtonsoft.Json;
 using PluginCouchbase.API.Factory;
 using PluginCouchbase.API.Utility;
 using PluginCouchbase.DataContracts;
 using PluginCouchbase.Helper;
-using Pub;
+
 
 namespace PluginCouchbase.API.Replication
 {
@@ -140,7 +141,7 @@ namespace PluginCouchbase.API.Replication
             }
             catch (Exception e)
             {
-                Logger.Error($"Error replicating records {e.Message}");
+                Logger.Error(e, $"Error replicating records {e.Message}");
                 // send ack
                 var ack = new RecordAck
                 {

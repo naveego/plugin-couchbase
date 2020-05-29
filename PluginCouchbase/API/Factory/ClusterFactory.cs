@@ -105,8 +105,9 @@ namespace PluginCouchbase.API.Factory
             }
 
             // error making bucket
-            Logger.Error($"Error ensuring bucket: {JsonConvert.SerializeObject(content.Errors, Formatting.Indented)}");
-            throw new Exception($"Error ensuring bucket {bucketName}");
+            var ex = new Exception($"Error ensuring bucket {bucketName}");
+            Logger.Error(ex, $"Error ensuring bucket: {JsonConvert.SerializeObject(content.Errors, Formatting.Indented)}");
+            throw ex;
         }
         
         public async Task DeleteBucketAsync(string bucketName)

@@ -2,12 +2,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Grpc.Core;
+using Naveego.Sdk.Plugins;
 using Newtonsoft.Json;
 using PluginCouchbase.DataContracts;
 using PluginCouchbase.Helper;
-using Pub;
+
 using Xunit;
-using Record = Pub.Record;
+using Record = Naveego.Sdk.Plugins.Record;
 
 namespace PluginCouchbaseTest.Plugin
 {
