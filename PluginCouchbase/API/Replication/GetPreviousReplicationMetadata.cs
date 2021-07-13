@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using Couchbase;
+using Naveego.Sdk.Logging;
 using PluginCouchbase.API.Factory;
 using PluginCouchbase.API.Utility;
 using PluginCouchbase.DataContracts;

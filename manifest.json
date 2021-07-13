@@ -15,6 +15,7 @@
   "canUseOAuth": false,
   "canWrite": false,
   "canConfigureReplication": true,
+  "canConfigure": true,
   "canWriteReplication": true,
   "configSchema": {
     "ui": {

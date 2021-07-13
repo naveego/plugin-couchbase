@@ -11,6 +11,7 @@ using Couchbase;
 using Couchbase.Authentication;
 using Couchbase.Configuration.Client;
 using Couchbase.Core;
+using Naveego.Sdk.Logging;
 using Newtonsoft.Json;
 using PluginCouchbase.DataContracts;
 using PluginCouchbase.Helper;
